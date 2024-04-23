@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"errors"
 	"time"
 )
 
