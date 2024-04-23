@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"os"
 	"unicode"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
+	"net/http"
+	"strings"
 )
 
 func main() {
@@ -15,7 +20,7 @@ func main() {
 			score := checkPasswordStrength(password)
 			percentage := (score * 100) / 6
 			// fmt.Printf for "(score * 100) / 6 = 100%"
-			fmt.Printf("Password Strength Evaluation: (%d * 100) = %d%%\n", score, percentage)
+			fmt.Printf("Password Strength Evaluation: %d%%\n", percentage)
 	        if score < 3 {
 	            fmt.Println("Password is weak.")
 	        } else if score < 4 {
@@ -34,10 +39,10 @@ func checkPasswordStrength(password string) int {
 	passwordLength := len(password)
 
 	// if password length is 8 reward with 1 point if it is greaer than or equal to 12 reward with 2 points
-	if passwordLength >= 8 {
-		score++
-	} else if passwordLength >= 12 {
+	if passwordLength >= 12 {
 		score += 2
+	} else if passwordLength >= 8 {
+		score ++
 	}
 	
 	// uppercase, lowercase, number & special character
@@ -57,7 +62,15 @@ func checkPasswordStrength(password string) int {
 	}
 
 	if hasRepeatedChars(password) {
-		score--  // Penalty for repeated characters
+		score--
+	}
+
+	// penalty for compromised password
+	compromised, err := isCompromised(password)
+	if err != nil {
+		fmt.Println("Error checking for compromised password:", err)
+	} else if compromised {
+		score--
 	}
 
 
@@ -93,4 +106,36 @@ func hasRepeatedChars(password string) bool {
 		previous = char
 	}
 	return false
+}
+
+func sha1Hash(text string) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(text))
+	return strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+}
+
+func isCompromised(password string) (bool, error) {
+	hash := sha1Hash(password)
+	prefix := hash[:5]
+	suffix := hash[5:]
+	url := fmt.Sprintf("https://api.pwnedpasswords.com/range/%s", prefix)
+	response, err := http.Get(url)
+	if err != nil {
+		return false, err
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return false, err
+	}
+
+	hashes := strings.Split(string(body), "\r\n")
+	for _, line := range hashes {
+		parts := strings.Split(line, ":")
+		if len(parts) > 0 && strings.ToUpper(parts[0]) == suffix {
+			return true, nil
+		}
+	}
+	return false, nil
 }
