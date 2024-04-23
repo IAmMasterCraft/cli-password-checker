@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"errors"
+	"time"
 )
 
 func main() {
@@ -127,21 +128,25 @@ func sha1Hash(text string) string {
 
 func isCompromised(password string) (bool, error) {
 	hash := sha1Hash(password)
-	prefix := hash[:5]
-	suffix := hash[5:]
-	url := fmt.Sprintf("https://api.pwnedpasswords.com/range/%s", prefix)
-	response, err := http.Get(url)
-	if err != nil {
-		return false, fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer response.Body.Close()
+    prefix := hash[:5]
+    suffix := hash[5:]
+    url := fmt.Sprintf("https://api.pwnedpasswords.com/range/%s", prefix)
 
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return false, fmt.Errorf("failed to read HTTP response: %w", err)
-	}
+    var body []byte
+    var err error
+    maxRetries := 3
+    backoff := time.Millisecond * 500
 
-	return checkHash(suffix, body), nil
+    for i := 0; i < maxRetries; i++ {
+        body, err = makeHTTPRequest(url)
+        if err == nil {
+            return checkHash(suffix, body), nil
+        }
+        time.Sleep(backoff)
+        backoff *= 2 // Double the backoff interval
+    }
+
+    return false, fmt.Errorf("failed after retries: %w", err)
 }
 
 func checkHash(suffix string, body []byte) bool {
@@ -153,6 +158,23 @@ func checkHash(suffix string, body []byte) bool {
         }
     }
     return false
+}
+
+func makeHTTPRequest(url string) ([]byte, error) {
+    client := &http.Client{
+        Timeout: time.Second * 10, // 10 seconds timeout
+    }
+    response, err := client.Get(url)
+    if err != nil {
+        return nil, fmt.Errorf("HTTP request failed: %w", err)
+    }
+    defer response.Body.Close()
+
+    body, err := io.ReadAll(response.Body)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read HTTP response: %w", err)
+    }
+    return body, nil
 }
 
 func classifyPassword(score int) {
