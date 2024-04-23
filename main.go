@@ -13,7 +13,7 @@ func main() {
 		if input.Scan() {
 			password := input.Text()
 			score := checkPasswordStrength(password)
-			percentage := (score * 100) / 5
+			percentage := (score * 100) / 6
 			// fmt.Printf("Password score: %d/5\n", score)
 			fmt.Printf("Password Strength Evaluation: %d%%\n", percentage)
 	        if score < 3 {
@@ -31,8 +31,13 @@ func main() {
 
 func checkPasswordStrength(password string) int {
 	score := 0
-	if len(password) >= 8 {
+	passwordLength := len(password)
+
+	// if password length is 8 reward with 1 point if it is greaer than or equal to 12 reward with 2 points
+	if passwordLength >= 8 {
 		score++
+	} else if passwordLength >= 12 {
+		score += 2
 	}
 	// uppercase, lowercase, number & special character
 	var hasUpperCase, hasLowerCase, hasNumber, hasSpecialChar bool
@@ -43,7 +48,7 @@ func checkPasswordStrength(password string) int {
 			hasUpperCase = true
 		case unicode.IsLower(char):
 			hasLowerCase = true
-		case unicode.IsNumber(char):
+		case unicode.IsDigit(char):
 			hasNumber = true
 		case unicode.IsPunct(char) || unicode.IsSymbol(char):
 			hasSpecialChar = true
