@@ -24,7 +24,7 @@ func main() {
             fmt.Fprintf(os.Stderr, "Error checking password strength: %v\n", err)
             return
         }
-        percentage := (score * 100) / 20
+        percentage := (score * 100) / 12
         fmt.Printf("Password Strength Evaluation: %d%%\n", percentage)
         classifyPassword(score)
     }
@@ -53,6 +53,14 @@ func evaluatePassword(password string) (int, error) {
     score := 0
     typesPresent := 0
 
+	passwordLength := len(password)
+
+	if passwordLength >= 12 {
+        score += 4
+    } else if passwordLength >= 8 {
+        score += 2
+    }
+
     hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar := checkCharTypes(password)
     if hasUpperCase {
         typesPresent++
@@ -70,7 +78,7 @@ func evaluatePassword(password string) (int, error) {
     score += calculateDiversityScore(typesPresent)
 
     if hasRepeatedChars(password) {
-        return score, errors.New("password has repeated characters")
+        score -= 1
     }
     return score, nil
 }
@@ -78,11 +86,11 @@ func evaluatePassword(password string) (int, error) {
 func calculateDiversityScore(typesPresent int) int {
     switch typesPresent {
     case 1:
-        return 1
+        return 2
     case 2:
-        return 3
+        return 4
     case 3:
-        return 5
+        return 6
     case 4:
         return 8
     default:
@@ -178,6 +186,10 @@ func makeHTTPRequest(url string) ([]byte, error) {
 }
 
 func classifyPassword(score int) {
+	const totalLength int = 12
+	meter := "[" + strings.Repeat("=", score) + strings.Repeat(" ", totalLength-score) + "]"
+
+    fmt.Printf("Password Strength: %s\n", meter)
 	switch {
 	case score < 5:
 		fmt.Println("Password is weak.")
