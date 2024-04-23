@@ -40,20 +40,7 @@ func checkPasswordStrength(password string) int {
 		score += 2
 	}
 	// uppercase, lowercase, number & special character
-	var hasUpperCase, hasLowerCase, hasNumber, hasSpecialChar bool
-
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUpperCase = true
-		case unicode.IsLower(char):
-			hasLowerCase = true
-		case unicode.IsDigit(char):
-			hasNumber = true
-		case unicode.IsPunct(char) || unicode.IsSymbol(char):
-			hasSpecialChar = true
-		}
-	}
+	hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar := checkCharTypes(password)
 
 	if hasUpperCase {
 		score++
@@ -61,7 +48,7 @@ func checkPasswordStrength(password string) int {
 	if hasLowerCase {
 		score++
 	}
-	if hasNumber {
+	if hasDigit {
 		score++
 	}
 	if hasSpecialChar {
@@ -69,4 +56,24 @@ func checkPasswordStrength(password string) int {
 	}
 
 	return score
+}
+
+
+func checkCharTypes(password string) (bool, bool, bool, bool) {
+	var hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar bool
+	for _, char := range password {
+		if unicode.IsUpper(char) {
+			hasUpperCase = true
+		}
+		if unicode.IsLower(char) {
+			hasLowerCase = true
+		}
+		if unicode.IsDigit(char) {
+			hasDigit = true
+		}
+		if unicode.IsPunct(char) || unicode.IsSymbol(char) {
+			hasSpecialChar = true
+		}
+	}
+	return hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar
 }
