@@ -14,8 +14,8 @@ func main() {
 			password := input.Text()
 			score := checkPasswordStrength(password)
 			percentage := (score * 100) / 6
-			// fmt.Printf("Password score: %d/5\n", score)
-			fmt.Printf("Password Strength Evaluation: %d%%\n", percentage)
+			// fmt.Printf for "(score * 100) / 6 = 100%"
+			fmt.Printf("Password Strength Evaluation: (%d * 100) = %d%%\n", score, percentage)
 	        if score < 3 {
 	            fmt.Println("Password is weak.")
 	        } else if score < 4 {
@@ -39,6 +39,7 @@ func checkPasswordStrength(password string) int {
 	} else if passwordLength >= 12 {
 		score += 2
 	}
+	
 	// uppercase, lowercase, number & special character
 	hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar := checkCharTypes(password)
 
@@ -54,6 +55,11 @@ func checkPasswordStrength(password string) int {
 	if hasSpecialChar {
 		score++
 	}
+
+	if hasRepeatedChars(password) {
+		score--  // Penalty for repeated characters
+	}
+
 
 	return score
 }
@@ -76,4 +82,15 @@ func checkCharTypes(password string) (bool, bool, bool, bool) {
 		}
 	}
 	return hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar
+}
+
+func hasRepeatedChars(password string) bool {
+	var previous rune
+	for i, char := range password {
+		if i > 0 && char == previous {
+			return true
+		}
+		previous = char
+	}
+	return false
 }
